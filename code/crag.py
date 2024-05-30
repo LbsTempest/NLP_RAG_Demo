@@ -38,7 +38,7 @@ def test_crag(source_file='../data/crag_data_200.jsonl', target_file='../data/cr
     with open(source_file, 'r', encoding='utf-8') as f:
         lines = f.readlines()
     result = []
-    for i,line in enumerate(lines[:5]):
+    for i,line in enumerate(lines):
         data = json.loads(line)
         query = data['query']
         answer = data['answer']
