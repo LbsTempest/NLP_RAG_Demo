@@ -1,0 +1,10 @@
+/.obsidian
+/documents
+/.vscode
+/BAAI
+/**/__pycache__
+/code/sentence_index
+/code/merging_index
+/test*
+/data/CRAG_cleaned
+data/crag_200_result.jsonl
