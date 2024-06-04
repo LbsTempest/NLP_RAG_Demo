@@ -39,23 +39,29 @@ def test_crag(source_file='../data/crag_data_200.jsonl', target_file='../data/cr
         lines = f.readlines()
     result = []
     for i,line in enumerate(lines):
-        data = json.loads(line)
-        query = data['query']
-        answer = data['answer']
-        search_results = data['search_results']
-        documents = []
-        for search_result in search_results:
-            documents.append(Document(text=search_result['page_result']))
-        index = build_automerging_index(documents, save_dir='merging_index/{}.index'.format(i))
-        base_retriever = index.as_retriever(similarity_top_k=args.similarity_top_k)
-        retriever = AutoMergingRetriever(base_retriever, index.storage_context, verbose=True)
-        auto_merging_engine = RetrieverQueryEngine.from_args(retriever, node_postprocessors=[Settings.rerank_model])
-        auto_merging_response = auto_merging_engine.query(query)
-        print(f'{query=}')
-        print(f'{auto_merging_response.response=}')
-        print(f'{answer=}')
-        data['pred'] = auto_merging_response.response
-        result.append(json.dumps({'query': query, 'answer': answer, 'pred': auto_merging_response.response},ensure_ascii=False)+'\n')
+        print(i)
+        try:
+            data = json.loads(line)
+            query = data['query']
+            answer = data['answer']
+            search_results = data['search_results']
+            documents = []
+            for search_result in search_results:
+                documents.append(Document(text=search_result['page_result']))
+            index = build_automerging_index(documents, save_dir='merging_index/{}.index'.format(i))
+            base_retriever = index.as_retriever(similarity_top_k=args.similarity_top_k)
+            retriever = AutoMergingRetriever(base_retriever, index.storage_context, verbose=True)
+            auto_merging_engine = RetrieverQueryEngine.from_args(retriever, node_postprocessors=[Settings.rerank_model])
+            auto_merging_response = auto_merging_engine.query(query)
+            print(f'{query=}')
+            print(f'{auto_merging_response.response=}')
+            print(f'{answer=}')
+            data['pred'] = auto_merging_response.response
+            result.append(json.dumps({'query': query, 'answer': answer, 'pred': auto_merging_response.response},ensure_ascii=False)+'\n')
+        except KeyError:
+            pass
+        except ValueError:
+            pass
     with open(target_file, 'w', encoding='utf-8') as f:
         f.write(''.join(result))
 
@@ -76,6 +82,8 @@ if __name__ == '__main__':
     parser.add_argument('--rerank_model_path', type=str, help='local rerank model path',
                         default='../BAAI/bge-reranker-base')
     parser.add_argument('--rerank_top_n', type=int, default=2)
+    parser.add_argument('--source_file', type=str, help='source file path', default='../data/crag_data_200.jsonl')
+    parser.add_argument('--target_file', type=str, help='target file path', default='../data/crag_200_result.jsonl')
     args = parser.parse_args()
 
     if args.model_type == 'api':
@@ -86,4 +94,4 @@ if __name__ == '__main__':
     Settings.llm = llm
     Settings.embed_model = HuggingFaceEmbedding(model_name=args.embedding_model_path)
     Settings.rerank_model = SentenceTransformerRerank(top_n=args.rerank_top_n, model=args.rerank_model_path)
-    test_crag()
+    test_crag(args.source_file, args.target_file)
